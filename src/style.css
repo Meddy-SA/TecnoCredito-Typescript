@@ -1,103 +1,67 @@
-@import url("https://use.typekit.net/rnh5gke.css");
-
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=New+Amsterdam&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .labelInput {
+    @apply block mb-2 text-sm font-medium text-gray-900 dark:text-gray-100;
+  }
+}
+
 :root {
-  font-family: inter-variable,Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --primary-color-light: #6366f1;
+  --primary-color-dark: #818cf8;
+
+  font-family: "Bebas Neue", Inter, system-ui, Avenir, Helvetica, Arial,
+    sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
+  font-style: normal;
+  font-size: x-large;
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 320px;
+  min-width: 100vw;
   min-height: 100vh;
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  color: var(--primary-color-dark);
+  text-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .card {
   padding: 2em;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
+.button-menu {
+  height: 1.75rem !important;
+  width: 1.75rem !important;
+  font-size: 0.25rem !important;
 }
 
 #app {
   margin: 0 auto;
-  padding: 2rem;
+  /*padding: 2rem;*/
   text-align: center;
 }
 
-.layout-dark {
-  background: linear-gradient(90deg, #242424 0%, #0a061a 100%);
-  min-height: 100vh;
-}
-
-.layout-dark:before {
-    min-height: 100vh;
-    height: 100%;
-    width: 100%;
-    content: "";
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    background: linear-gradient(90deg, #242424 0%, #0a061a 100%);
-    background-image: url("src/assets/background.png");
-    background-repeat: no-repeat;
-    z-index: 0;
-}
-
 @media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+  h1 {
+    color: var(--primary-color-light);
+    text-shadow: none;
   }
 }

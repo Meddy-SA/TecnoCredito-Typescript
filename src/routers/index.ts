@@ -1,20 +1,44 @@
-import { createRouter, createWebHistory, type NavigationGuardNext, type RouteLocationNormalizedGeneric, type RouteRecordRaw } from 'vue-router'
+import {
+  createRouter,
+  createWebHistory,
+  type NavigationGuardNext,
+  type RouteLocationNormalizedGeneric,
+  type RouteRecordRaw,
+} from "vue-router";
 
-import HomeRoute from './home.ts'
+import HomeRoute from "./home.ts";
+import UserRoute from "./user.ts";
 
 const routes: RouteRecordRaw[] = [
   { ...HomeRoute },
-  { path: '/:pathMatch(.*)*', redirect: '/' }
-]
+  { ...UserRoute },
+  { path: "/:pathMatch(.*)*", redirect: "/" },
+];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
-})
+  linkActiveClass: "router-link-active",
+  routes,
+});
 
-router.beforeEach(async (to: RouteLocationNormalizedGeneric, from: RouteLocationNormalizedGeneric, next: NavigationGuardNext): Promise<void> => {
-  console.log(`${from} ${to}`)
-  next()
-})
+router.beforeEach(
+  async (
+    to: RouteLocationNormalizedGeneric,
+    from: RouteLocationNormalizedGeneric,
+    next: NavigationGuardNext
+  ): Promise<void> => {
+    console.log(`${from}`);
+    if (to.matched.some((r) => r.meta.auth)) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        next({ path: "/users/login", query: { redirect: to.path } });
+      } else {
+        next();
+      }
+    } else {
+      next();
+    }
+  }
+);
 
-export default router
+export default router;
