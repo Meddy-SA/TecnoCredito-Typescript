@@ -1,9 +1,12 @@
-import http from '../api.ts';
-import type { APIResponse, ResponseData } from '../types.ts';
-import type { LoginDto, UserData } from './types.ts';
+import http from "../api.ts";
+import type { APIResponse, ResponseData } from "../types.ts";
+import type { LoginDto, UserData } from "./types.ts";
 
 async function login(credentials: LoginDto): Promise<APIResponse<UserData>> {
-  const res = await http.post<ResponseData<UserData>>('Authentication/login', credentials);
+  const res = await http.post<ResponseData<UserData>>(
+    "user/login",
+    credentials
+  );
 
   if (res.data === null || res.data.response === null) {
     return { success: false, content: {} as UserData, status: res.status };
@@ -13,11 +16,11 @@ async function login(credentials: LoginDto): Promise<APIResponse<UserData>> {
 
   return {
     success: r.success,
-    content: r.result ?? {} as UserData,
-    status: res.status
-  }
+    content: r.result ?? ({} as UserData),
+    status: res.status,
+  };
 }
 
 export default {
   login,
-}
+};

@@ -64,7 +64,8 @@ export const useAuthStore = defineStore("auth", {
     updateUserInfo(userInfo: UserData) {
       this.userName = userInfo.userName;
       this.email = userInfo.email;
-      this.name = `${userInfo.name} ${userInfo.lastName}`;
+      this.name =
+        userInfo.fullName ?? `${userInfo.firstName} ${userInfo.lastName}`;
       this.token = userInfo.token ?? "";
       this.menu = userInfo.menu ?? "";
       this.avatar = userInfo.avatar ?? PngUser;

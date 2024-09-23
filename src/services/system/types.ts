@@ -1,6 +1,6 @@
 export type EnumDTO = {
   id: number;
-  nombre: string;
+  name: string;
   severity?: string;
 };
 

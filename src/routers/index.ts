@@ -7,10 +7,12 @@ import {
 } from "vue-router";
 
 import HomeRoute from "./home.ts";
+import ProductRoute from "./product.ts";
 import UserRoute from "./user.ts";
 
 const routes: RouteRecordRaw[] = [
   { ...HomeRoute },
+  { ...ProductRoute },
   { ...UserRoute },
   { path: "/:pathMatch(.*)*", redirect: "/" },
 ];

@@ -1,11 +1,11 @@
 //types.ts file
 
 export type APIResponse<T> = {
-  success: boolean
-  content: T
-  status?: number
-  response?: ResponseDTO<T>
-}
+  success: boolean;
+  content: T;
+  status?: number;
+  message?: string;
+};
 
 export interface ResponseDTO<T> {
   success: boolean;
