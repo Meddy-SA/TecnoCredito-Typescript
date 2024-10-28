@@ -1,5 +1,5 @@
 import type { CategoryDTO } from "../category/types";
-import type { EnumDTO } from "../system/types";
+import type { EnumDTO } from "../enumerator/types";
 
 import { createEmptyCategoryDTO } from "../category/types";
 
@@ -35,6 +35,6 @@ export const createEmptyProductDTO = (): ProductDTO => ({
   model: "",
   sku: "",
   technicalSpecifications: "",
-  status: { id: 0, name: "" },
+  status: { id: 0, name: "" } as EnumDTO,
   productImages: [],
 });

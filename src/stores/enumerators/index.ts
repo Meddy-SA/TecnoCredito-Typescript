@@ -1,31 +1,35 @@
-// stores/product/index.ts
-
+// stores/enumerators/index.ts
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { ProductDTO } from "../../services/product/types.ts";
 import type { APIResponse } from "../../services/types.ts";
 import { API } from "../../services/index.ts";
 import { handleApiError } from "../../services/serviceHandler.ts";
+import type { EnumDTO } from "../../services/enumerator/types.ts";
 
-export const useProductStore = defineStore("product", () => {
-  const products = ref<ProductDTO[]>([]);
-  const product = ref<ProductDTO | null>(null);
+export const useEnumeratorStore = defineStore("enumerator", () => {
+  const sexo = ref<EnumDTO[]>([]);
+  const status = ref<EnumDTO[]>([]);
+  const roles = ref<EnumDTO[]>([]);
   const isLoading = ref(false);
 
-  function setProducts(data: ProductDTO[]): void {
-    products.value = data;
+  function setSexs(data: EnumDTO[]): void {
+    sexo.value = data;
   }
 
-  function setProduct(data: ProductDTO | null): void {
-    product.value = data;
+  function setStatuses(data: EnumDTO[]): void {
+    status.value = data;
   }
 
-  async function fetchProducts(): Promise<APIResponse<string | null>> {
+  function setRoles(data: EnumDTO[]): void {
+    roles.value = data;
+  }
+
+  async function fetchSexos(): Promise<APIResponse<string | null>> {
     isLoading.value = true;
     try {
-      const result = await API.product.getProducts();
-      if (result.status === 200) {
-        setProducts(result.content);
+      const result = await API.status.getSexos();
+      if (result.success) {
+        setSexs(result.content);
         return { success: true, content: null };
       }
 
@@ -37,17 +41,14 @@ export const useProductStore = defineStore("product", () => {
     }
   }
 
-  async function createProduct(
-    product: ProductDTO
-  ): Promise<APIResponse<string | null>> {
+  async function fetchStatuses(): Promise<APIResponse<string | null>> {
     isLoading.value = true;
     try {
-      const result = await API.product.postProduct(product);
-      if (result.status === 200) {
-        setProduct(result.content);
+      const result = await API.status.getStatus();
+      if (result.success) {
+        setStatuses(result.content);
         return { success: true, content: null };
       }
-
       throw new Error(result.error ?? `Unexpected status ${result.status}`);
     } catch (error) {
       return handleApiError(error);
@@ -56,18 +57,14 @@ export const useProductStore = defineStore("product", () => {
     }
   }
 
-  async function updateProduct(
-    id: number,
-    product: ProductDTO
-  ): Promise<APIResponse<string | null>> {
+  async function fetchRoles(): Promise<APIResponse<string | null>> {
     isLoading.value = true;
     try {
-      const result = await API.product.putProduct(id, product);
-      if (result.status === 200) {
-        setProducts(result.content);
+      const result = await API.status.getRoles();
+      if (result.success) {
+        setRoles(result.content);
         return { success: true, content: null };
       }
-
       throw new Error(result.error ?? `Unexpected status ${result.status}`);
     } catch (error) {
       return handleApiError(error);
@@ -77,10 +74,12 @@ export const useProductStore = defineStore("product", () => {
   }
 
   return {
-    products,
+    sexo,
+    status,
+    roles,
     isLoading,
-    fetchProducts,
-    createProduct,
-    updateProduct,
+    fetchSexos,
+    fetchStatuses,
+    fetchRoles,
   };
 });

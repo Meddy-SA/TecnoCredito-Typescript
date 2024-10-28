@@ -5,12 +5,14 @@ export type APIResponse<T> = {
   content: T;
   status?: number;
   message?: string;
+  error?: string;
 };
 
 export interface ResponseDTO<T> {
   success: boolean;
   message: string;
   result: T | null;
+  error?: string;
 }
 
 export type ResponseData<T> = {

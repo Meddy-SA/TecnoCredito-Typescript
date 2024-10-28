@@ -12,10 +12,12 @@ export interface MessageNotify {
   badge?: string;
 }
 
+type AlertSeverity = "success" | "info" | "warn" | "error";
+
 export interface Alert {
   id: string;
   msg: string;
-  severity: 'success' | 'info' | 'warn' | 'error';
+  severity: AlertSeverity;
   read: boolean;
   summary: string;
   life: number;

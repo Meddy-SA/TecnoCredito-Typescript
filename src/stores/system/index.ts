@@ -5,11 +5,12 @@ import { ref } from "vue";
 import type { FechaDTO, MesesDTO } from "../../services/system/types";
 import type { APIResponse } from "../../services/types";
 import { API } from "../../services";
-import { handleApiError } from "../../services/errorHandler.ts";
+import { handleApiError } from "../../services/serviceHandler.ts";
 
 export const useSystemStore = defineStore("system", () => {
   const state = ref<Date>();
   const meses = ref<MesesDTO>();
+  const isLoading = ref<boolean>(false);
 
   function initSystem(data: FechaDTO): void {
     state.value = new Date(data.fecha);
@@ -20,6 +21,7 @@ export const useSystemStore = defineStore("system", () => {
   }
 
   async function dispatchGetFecha(): Promise<APIResponse<string | null>> {
+    isLoading.value = true;
     try {
       const { status, content, success } = await API.system.getFecha();
       if (status === 200) {
@@ -29,12 +31,15 @@ export const useSystemStore = defineStore("system", () => {
       throw new Error(`Unexpected status ${status}`);
     } catch (error) {
       return handleApiError(error);
+    } finally {
+      isLoading.value = false;
     }
   }
 
   const dispatchGetMesActual = async (): Promise<
     APIResponse<string | null>
   > => {
+    isLoading.value = true;
     try {
       const { status, content, success } = await API.system.getMesActual();
       if (status === 200) {
@@ -45,12 +50,15 @@ export const useSystemStore = defineStore("system", () => {
       throw new Error(`Unexpected status ${status}`);
     } catch (error) {
       return handleApiError(error);
+    } finally {
+      isLoading.value = false;
     }
   };
 
   return {
     state,
     meses,
+    isLoading,
     dispatchGetFecha,
     dispatchGetMesActual,
   };

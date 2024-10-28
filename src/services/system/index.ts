@@ -1,43 +1,49 @@
 import http from "../api.ts";
+import { handleServiceError } from "../serviceHandler.ts";
 import type { APIResponse } from "../types.ts";
 import type { FechaDTO, MesesDTO } from "./types.ts";
 
-async function getFecha(): Promise<APIResponse<FechaDTO>> {
-  const res = await http.get<FechaDTO>("system");
-  if (res.data === null) {
-    return { success: false, content: {} as FechaDTO, status: res.status };
+export function systemAPIController() {
+  async function getFecha(): Promise<APIResponse<FechaDTO>> {
+    try {
+      const response = await http.get<FechaDTO>("system");
+
+      if (!response.data) {
+        throw new Error("No se obtuvo respuesta del servidor");
+      }
+
+      return {
+        success: true,
+        content: response.data,
+        status: response.status,
+      };
+    } catch (error) {
+      return handleServiceError<FechaDTO>(error, {
+        fecha: new Date().toISOString().slice(0, 10),
+      });
+    }
   }
 
-  const r = res.data;
+  async function getMesActual(): Promise<APIResponse<MesesDTO>> {
+    try {
+      const response = await http.get<MesesDTO>("system/mesActual");
 
-  return {
-    success: true,
-    content: r ?? new Date().toISOString().slice(0, 10),
-    status: res.status,
-  };
-}
+      if (!response.data) {
+        throw new Error("No se obtuvo respuesta del servidor");
+      }
 
-async function getMesActual(): Promise<APIResponse<MesesDTO>> {
-  const res = await http.get<MesesDTO>("system/mesActual");
-
-  const defaultMesesDTO: MesesDTO = {
-    startDate: new Date().toISOString(),
-    endDate: new Date().toISOString(),
-  };
-  if (res.data === null) {
-    return { success: false, content: defaultMesesDTO, status: res.status };
+      return {
+        success: true,
+        content: response.data,
+        status: response.status,
+      };
+    } catch (error) {
+      const currentDate = new Date().toISOString();
+      return handleServiceError<MesesDTO>(error, {
+        startDate: currentDate,
+        endDate: currentDate,
+      });
+    }
   }
-
-  const r = res.data;
-
-  return {
-    success: true,
-    content: r ?? defaultMesesDTO,
-    status: res.status,
-  };
+  return { getFecha, getMesActual };
 }
-
-export default {
-  getFecha,
-  getMesActual,
-};

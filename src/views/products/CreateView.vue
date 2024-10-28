@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from "vue";
-import { useVuelidate } from "@vuelidate/core";
-import { required, minValue } from "@vuelidate/validators";
-
+import { watch } from "vue";
+import { useProductForm } from "../../composables/product/useProductForm";
+import type { ProductDTO } from "../../services/product/types";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
+import Textarea from "primevue/textarea";
 import Tabs from "primevue/tabs";
 import TabList from "primevue/tablist";
 import Tab from "primevue/tab";
@@ -14,156 +14,249 @@ import TabPanels from "primevue/tabpanels";
 import TabPanel from "primevue/tabpanel";
 import Images from "./components/images.vue";
 import Gallery from "./components/gallery.vue";
+import ProgressSpinner from "primevue/progressspinner";
 
-import type { ProductDTO } from "../../services/product/types";
-import type { CategoryDTO } from "../../services/category/types";
-import type { GalleryImage, UploadedFile } from "./types";
-import type { EnumDTO } from "../../services/system/types";
-
-const props = defineProps<{ product: ProductDTO }>();
+const props = defineProps<{
+  product: ProductDTO | null;
+}>();
 
 const emit = defineEmits<{
   (e: "submit", product: ProductDTO): void;
   (e: "cancel"): void;
 }>();
 
-const data = reactive<ProductDTO>({ ...props.product });
+const {
+  formData,
+  v$,
+  handleSubmit,
+  handleImagesSelected,
+  resetForm,
+  updateFormData,
+  isLoading,
+} = useProductForm(async (savedProduct) => {
+  emit("submit", savedProduct);
+});
 
+// Observar cambios en el producto y actualizar el formulario
 watch(
   () => props.product,
   (newProduct) => {
-    Object.assign(data, newProduct);
+    if (newProduct) {
+      updateFormData(newProduct);
+    } else {
+      resetForm();
+    }
   },
-  { deep: true }
+  { immediate: true }
 );
 
-const rules = {
-  name: { required },
-  price: { required, minValue: minValue(0) },
-  stockQuantity: { required, minValue: minValue(0) },
-  category: { required },
-};
-
-const v$ = useVuelidate(rules, data);
-
-const uploadedImages = ref<GalleryImage[]>([]);
-
-const onImagesUploaded = (files: UploadedFile[]) => {
-  uploadedImages.value = files.map((file: UploadedFile) => ({
-    itemImageSrc: file.objectURL,
-    thumbnailImageSrc: file.objectURL,
-    alt: file.name,
-  }));
-};
-
-const categories = ref<CategoryDTO[]>([]);
-const status = ref<EnumDTO[]>([]);
-
-const submitForm = async () => {
-  const isValid = await v$.value.$validate();
-  if (isValid) {
-    emit("submit", data);
-  }
-};
-
-const cancelForm = () => {
+const onCancel = () => {
+  resetForm();
   emit("cancel");
 };
 </script>
 
 <template>
-  <div class="">
-    <form @submit.prevent="submitForm">
-      <Tabs value="0">
-        <TabList>
-          <Tab value="0">Información General</Tab>
-          <Tab value="1">Imágenes</Tab>
-          <Tab value="2">Características</Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel value="0">
-            <div class="card w-full">
-              <div class="grid grid-cols-6 gap-4">
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="name" class="labelInput">Nombre</label>
-                  <InputText v-model="data.name" type="text" id="name" class="w-full" />
-                  <small class="p-error" v-if="v$.name.$invalid && v$.name.$dirty">{{ v$.name.$errors[0].$message
-                    }}</small>
-                </div>
+  <form @submit.prevent="handleSubmit">
+    <!-- Loading overlay -->
+    <div v-if="isLoading" class="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
+      <ProgressSpinner />
+    </div>
+    <Tabs value="0">
+      <TabList>
+        <Tab value="0">Información General</Tab>
+        <Tab value="1">Imágenes</Tab>
+        <Tab value="2">Características</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel value="0">
+          <!-- Información General -->
+          <div class="card w-full">
+            <div class="grid grid-cols-6 gap-4 p-4">
+              <!-- Nombre -->
+              <div class="col-span-12 md:col-span-6">
+                <span class="p-float-label">
+                  <InputText id="name" v-model="formData.product.name" :class="{
+                    'p-invalid':
+                      v$.product.name.$invalid && v$.product.name.$dirty,
+                  }" class="w-full" />
+                  <label for="name">Nombre</label>
+                </span>
+                <small class="p-error" v-if="v$.product.name.$invalid && v$.product.name.$dirty">
+                  {{ v$.product.name.$errors[0].$message }}
+                </small>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="description" class="labelInput">Descripción</label>
-                  <InputText v-model="data.description" type="text" id="description" class="w-full" />
-                </div>
+              <!-- Categoría -->
+              <div class="col-span-12 md:col-span-6">
+                <span class="p-float-label">
+                  <Select id="category" v-model="formData.product.category" :options="formData.categories"
+                    optionLabel="name" :class="{
+                      'p-invalid':
+                        v$.product.category.$invalid &&
+                        v$.product.category.$dirty,
+                    }" class="w-full" />
+                  <label for="category">Categoría</label>
+                </span>
+                <small class="p-error" v-if="
+                  v$.product.category.$invalid && v$.product.category.$dirty
+                ">
+                  {{ v$.product.category.$errors[0].$message }}
+                </small>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="price" class="labelInput">Precio</label>
-                  <InputNumber input-id="price" v-model="data.price" prefix="$" class="w-full" />
-                  <small class="p-error" v-if="v$.price.$invalid && v$.price.$dirty">{{ v$.price.$errors[0].$message
-                    }}</small>
-                </div>
+              <!-- Descripción -->
+              <div class="col-span-12">
+                <span class="p-float-label">
+                  <Textarea id="description" v-model="formData.product.description" rows="3" class="w-full" />
+                  <label for="description">Descripción</label>
+                </span>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="stock" class="labelInput">Stock</label>
-                  <InputNumber input-id="stock" v-model="data.stockQuantity" class="w-full" />
-                </div>
+              <!-- Precio -->
+              <div class="col-span-12 md:col-span-4">
+                <span class="p-float-label">
+                  <InputNumber id="price" v-model="formData.product.price" :min="0" mode="currency" currency="USD"
+                    :class="{
+                      'p-invalid':
+                        v$.product.price.$invalid && v$.product.price.$dirty,
+                    }" class="w-full" />
+                  <label for="price">Precio</label>
+                </span>
+                <small class="p-error" v-if="v$.product.price.$invalid && v$.product.price.$dirty">
+                  {{ v$.product.price.$errors[0].$message }}
+                </small>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="category" class="labelInput">Categoría</label>
-                  <Select id="category" v-model="data.category" :options="categories" optionLabel="name"
-                    placeholder="Seleccione una categoría" class="w-full" />
-                </div>
+              <!-- Stock -->
+              <div class="col-span-12 md:col-span-4">
+                <span class="p-float-label">
+                  <InputNumber id="stockQuantity" v-model="formData.product.stockQuantity" :min="0" :class="{
+                    'p-invalid':
+                      v$.product.stockQuantity.$invalid &&
+                      v$.product.stockQuantity.$dirty,
+                  }" class="w-full" />
+                  <label for="stockQuantity">Stock</label>
+                </span>
+                <small class="p-error" v-if="
+                  v$.product.stockQuantity.$invalid &&
+                  v$.product.stockQuantity.$dirty
+                ">
+                  {{ v$.product.stockQuantity.$errors[0].$message }}
+                </small>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="brand" class="labelInput">Marca</label>
-                  <InputText v-model="data.brand" type="text" id="brand" class="w-full" />
-                </div>
+              <!-- Estado -->
+              <div class="col-span-12 md:col-span-4">
+                <span class="p-float-label">
+                  <Select id="status" v-model="formData.product.status" :options="formData.statuses" optionLabel="name"
+                    :class="{
+                      'p-invalid':
+                        v$.product.status.$invalid && v$.product.status.$dirty,
+                    }" class="w-full" />
+                  <label for="status">Estado</label>
+                </span>
+                <small class="p-error" v-if="v$.product.status.$invalid && v$.product.status.$dirty">
+                  {{ v$.product.status.$errors[0].$message }}
+                </small>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="model" class="labelInput">Modelo</label>
-                  <InputText v-model="data.model" type="text" id="model" class="w-full" />
-                </div>
+              <!-- Marca -->
+              <div class="col-span-12 md:col-span-4">
+                <span class="p-float-label">
+                  <InputText id="brand" v-model="formData.product.brand" class="w-full" />
+                  <label for="brand">Marca</label>
+                </span>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="sku" class="labelInput">SKU</label>
-                  <InputText v-model="data.sku" type="text" id="sku" class="w-full" />
-                </div>
+              <!-- Modelo -->
+              <div class="col-span-12 md:col-span-4">
+                <span class="p-float-label">
+                  <InputText id="model" v-model="formData.product.model" class="w-full" />
+                  <label for="model">Modelo</label>
+                </span>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="status" class="labelInput">Estado</label>
-                  <Select id="status" v-model="data.status" :options="status" optionLabel="name" class="w-full" />
-                </div>
+              <!-- SKU -->
+              <div class="col-span-12 md:col-span-4">
+                <span class="p-float-label">
+                  <InputText id="sku" v-model="formData.product.sku" class="w-full" />
+                  <label for="sku">SKU</label>
+                </span>
+              </div>
 
-                <div class="col-span-6 sm:col-span-3">
-                  <label for="technicalSpecifications" class="labelInput">Especificaciones</label>
-                  <InputText v-model="data.technicalSpecifications" type="text" id="technicalSpecifications"
+              <!-- Especificaciones Técnicas -->
+              <div class="col-span-12">
+                <span class="p-float-label">
+                  <Textarea id="technicalSpecifications" v-model="formData.product.technicalSpecifications" rows="3"
                     class="w-full" />
-                </div>
+                  <label for="technicalSpecifications">Especificaciones Técnicas</label>
+                </span>
               </div>
             </div>
-          </TabPanel>
+          </div>
+        </TabPanel>
 
-          <TabPanel value="1">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3>Subir imágenes</h3>
-                <Images @imagesUploaded="onImagesUploaded" />
-              </div>
-              <div>
-                <h3>Galería de imágenes</h3>
-                <Gallery :images="uploadedImages" />
-              </div>
+        <TabPanel value="1">
+          <!-- Imágenes -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3>Subir imágenes</h3>
+              <Images @imagesUploaded="handleImagesSelected" />
             </div>
-          </TabPanel>
+            <div>
+              <h3>Galería de imágenes</h3>
+              <Gallery :images="formData.uploadedImages" />
+            </div>
+          </div>
+        </TabPanel>
 
-          <TabPanel value="2">Proximamente</TabPanel>
-        </TabPanels>
-      </Tabs>
+        <TabPanel value="2">Proximamente</TabPanel>
+      </TabPanels>
+    </Tabs>
 
-      <div class="flex justify-end gap-2 mt-4">
-        <Button label="Cancel" icon="pi pi-times" outlined @click="cancelForm" />
-        <Button label="Save" icon="pi pi-check" type="submit" />
-      </div>
-    </form>
-  </div>
+    <!-- Botones de acción -->
+    <div class="flex justify-end gap-2 mt-4">
+      <Button label="Cancelar" icon="pi pi-times" outlined @click="onCancel" />
+      <Button label="Grabar" icon="pi pi-check" :loading="isLoading" type="submit" />
+    </div>
+  </form>
 </template>
+
+<style scoped>
+.p-float-label {
+  display: block;
+}
+
+:deep(.p-inputtext),
+:deep(.p-dropdown),
+:deep(.p-inputnumber-input) {
+  width: 100%;
+}
+
+:deep(.p-dropdown-label) {
+  text-align: left;
+}
+
+/* Asegurar que los inputs numéricos tengan el mismo alto que los demás */
+:deep(.p-inputnumber) {
+  width: 100%;
+}
+
+/* Ajustar el espaciado de los mensajes de error */
+.p-error {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* Mejorar la visualización del spinner de carga */
+:deep(.p-progress-spinner) {
+  width: 50px;
+  height: 50px;
+}
+
+/* Ajustar el padding del TabView */
+:deep(.p-tabview-panels) {
+  padding: 0;
+}
+</style>
