@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import HelloWorld from "../components/HelloWorld.vue";
-import { useAuthStore } from "../stores";
+  import HelloWorld from '@/components/HelloWorld.vue'
+  import { useSessionStore } from '@/stores'
 
-const authStore = useAuthStore();
+  const sessionStore = useSessionStore()
 </script>
 
 <template>
-  <HelloWorld :msg="authStore.name" />
+  <HelloWorld :msg="sessionStore.name || ''" />
 </template>

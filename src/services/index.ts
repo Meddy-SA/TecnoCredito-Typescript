@@ -1,14 +1,8 @@
-// Service/index.ts
-import { authenticationAPIController } from "./authentication";
-import { categoryAPIController } from "./category";
-import { enumeratorAPIController } from "./enumerator";
-import { productAPIController } from "./product";
-import { systemAPIController } from "./system";
-
-export const API = {
-  auth: authenticationAPIController(),
-  category: categoryAPIController(),
-  product: productAPIController(),
-  status: enumeratorAPIController(),
-  system: systemAPIController(),
-};
+export { authService } from './authentication/auth.service'
+export { profileService } from './authentication/profile.service'
+export { categoryService } from './category/category.service'
+export { creditService } from './credit/credit.service'
+export { enumeratorService } from './enumerator/enumerator.service'
+export { paymentService } from './payment/payment.service'
+export { productService } from './product/product.service'
+export { systemService } from './system/system.service'

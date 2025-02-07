@@ -1,53 +1,80 @@
-import { createApp } from "vue";
-import { createPinia } from "pinia";
+// Core Vue Imports
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import App from './App.vue'
 
-import App from "./App.vue";
-import "./style.css";
-import MyPreset from "./config/myPreset";
-import "primeicons/primeicons.css";
-import "boxicons";
+// Styles
+import './style.css'
+import 'primeicons/primeicons.css'
+import 'boxicons'
+import 'atropos/css'
 
-// get middlewares
-import routers from "./routers";
-import { localeOptions } from "./locales/primevue-locale";
-import PrimeVue from "primevue/config";
-import ToastService from "primevue/toastservice";
-import ConfirmationService from "primevue/confirmationservice";
-import Tooltip from "primevue/tooltip";
-import FocusTrap from "primevue/focustrap";
-import Ripple from "primevue/ripple";
-import StyleClass from "primevue/styleclass";
-import BadgeDirective from "primevue/badgedirective";
-import AnimateOnScroll from "primevue/animateonscroll";
+// Router
+import router from './routers'
 
-const app = createApp(App);
-const pinia = createPinia();
+// PrimeVue Configuration
+import PrimeVue from 'primevue/config'
+import { localeOptions } from './locales/primevue-locale'
+import MyPreset from './config/myPreset'
 
-app.use(pinia);
-app.use(routers);
+// PrimeVue Services
+import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
 
-// PrimeVUE
-app.use(PrimeVue, {
+// PrimeVue Directives
+import Tooltip from 'primevue/tooltip'
+import FocusTrap from 'primevue/focustrap'
+import Ripple from 'primevue/ripple'
+import StyleClass from 'primevue/styleclass'
+import BadgeDirective from 'primevue/badgedirective'
+import AnimateOnScroll from 'primevue/animateonscroll'
+
+// Third Party Libraries
+import { register as registerSwiper } from 'swiper/element/bundle'
+
+// Initialize Swiper
+registerSwiper()
+
+// Create Vue application instance
+const app = createApp(App)
+const pinia = createPinia()
+
+// Configure PrimeVue
+const primeVueConfig = {
   ripple: true,
   locale: localeOptions,
   theme: {
     preset: MyPreset,
     options: {
-      prefix: "p",
-      darkModeSelector: ".my-app-dark",
+      prefix: 'p',
+      darkModeSelector: '.my-app-dark',
       cssLayer: false,
     },
   },
-});
+}
 
-// Directivas
-app.use(ToastService);
-app.use(ConfirmationService);
-app.directive("tooltip", Tooltip);
-app.directive("focustrap", FocusTrap);
-app.directive("ripple", Ripple);
-app.directive("styleclass", StyleClass);
-app.directive("badge", BadgeDirective);
-app.directive("animateonscroll", AnimateOnScroll);
+// Register plugins
+app.use(pinia)
+app.use(router)
+app.use(PrimeVue, primeVueConfig)
 
-app.mount("#app");
+// Register PrimeVue services
+app.use(ToastService)
+app.use(ConfirmationService)
+
+// Register PrimeVue directives
+const directives = {
+  tooltip: Tooltip,
+  focustrap: FocusTrap,
+  ripple: Ripple,
+  styleclass: StyleClass,
+  badge: BadgeDirective,
+  animateonscroll: AnimateOnScroll,
+}
+
+Object.entries(directives).forEach(([name, directive]) => {
+  app.directive(name, directive)
+})
+
+// Mount application
+app.mount('#app')

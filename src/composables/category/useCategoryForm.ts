@@ -1,63 +1,58 @@
-import { ref, onMounted } from "vue";
-import { useCategoryStore } from "../../stores/category";
-import type { CategoryDTO } from "../../services/category/types";
-import { required } from "@vuelidate/validators";
-import { useVuelidate } from "@vuelidate/core";
-import { storeToRefs } from "pinia";
-import { createEmptyCategoryDTO } from "../../services/category/types";
+import { ref, onMounted } from 'vue'
+import { useCategoryStore } from '../../stores/category/category.store'
+import { Categories, type CategoryDTO } from '../../services/category/types'
+import { required } from '@vuelidate/validators'
+import { useVuelidate } from '@vuelidate/core'
+import { storeToRefs } from 'pinia'
 
 interface CategoryFormData {
-  category: CategoryDTO;
-  availableCategories: CategoryDTO[];
+  category: CategoryDTO
+  availableCategories: CategoryDTO[]
 }
 
 export function useCategoryForm(onSave: (category: CategoryDTO) => void) {
-  const categoryStore = useCategoryStore();
-  const { categories, isLoading } = storeToRefs(categoryStore);
+  const categoryStore = useCategoryStore()
+  const { categories, isLoading } = storeToRefs(categoryStore)
 
   const formData = ref<CategoryFormData>({
-    category: createEmptyCategoryDTO(),
+    category: Categories.getDefault(),
     availableCategories: [],
-  });
+  })
 
   const rules = {
     category: {
       name: { required },
     },
-  };
+  }
 
-  const v$ = useVuelidate(rules, formData);
+  const v$ = useVuelidate(rules, formData)
 
   async function initForm() {
     try {
-      await categoryStore.fetchCategories();
+      await categoryStore.getCategories()
 
       formData.value.availableCategories = Array.isArray(categories.value)
-        ? categories.value.filter(
-          (cat) => cat.id !== formData.value.category.id
-        )
-        : [];
+        ? categories.value.filter((cat) => cat.id !== formData.value.category.id)
+        : []
     } catch (error) {
-      console.error("Error initializing form:", error);
-      formData.value.availableCategories = [];
+      console.error('Error initializing form:', error)
+      formData.value.availableCategories = []
     }
   }
 
   async function handleSubmit() {
-    const isValid = await v$.value.$validate();
+    const isValid = await v$.value.$validate()
     if (isValid) {
-      onSave(formData.value.category);
+      onSave(formData.value.category)
     }
   }
 
   function resetForm() {
     formData.value = {
-      category: createEmptyCategoryDTO(),
-      availableCategories: Array.isArray(categories.value)
-        ? categories.value
-        : [],
-    };
-    v$.value.$reset();
+      category: Categories.getDefault(),
+      availableCategories: Array.isArray(categories.value) ? categories.value : [],
+    }
+    v$.value.$reset()
   }
 
   function updateFormData(category: CategoryDTO | null) {
@@ -69,15 +64,15 @@ export function useCategoryForm(onSave: (category: CategoryDTO) => void) {
         availableCategories: Array.isArray(categories.value)
           ? categories.value.filter((cat) => cat.id !== category.id)
           : [],
-      };
+      }
     } else {
-      resetForm();
+      resetForm()
     }
   }
 
   onMounted(async () => {
-    await initForm();
-  });
+    await initForm()
+  })
 
   return {
     formData,
@@ -86,5 +81,5 @@ export function useCategoryForm(onSave: (category: CategoryDTO) => void) {
     resetForm,
     updateFormData,
     isLoading,
-  };
+  }
 }

@@ -1,102 +1,97 @@
 // composables/category/useCategoryTable.ts
-import { ref, computed } from "vue";
-import type { CategoryDTO } from "../../services/category/types";
-import { useCategoryStore } from "../../stores/category";
-import { useAlertStore } from "../../stores";
-import { storeToRefs } from "pinia";
-import { createEmptyCategoryDTO } from "../../services/category/types";
+import { ref, computed } from 'vue'
+import { Categories, type CategoryDTO } from '@/services/category/types'
+import { useCategoryStore } from '@/stores/category/category.store'
+import { useAlertStore } from '@/stores'
+import { storeToRefs } from 'pinia'
 
 interface CategoryFilters {
-  global: { value: string | null; matchMode: string };
+  global: { value: string | null; matchMode: string }
 }
 
 interface TableState {
-  selectedCategories: CategoryDTO[];
-  currentCategory: CategoryDTO | null;
-  isDialogVisible: boolean;
+  selectedCategories: CategoryDTO[]
+  currentCategory: CategoryDTO | null
+  isDialogVisible: boolean
 }
 
 const DEFAULT_TABLE_STATE: TableState = {
   selectedCategories: [],
   currentCategory: null,
   isDialogVisible: false,
-};
+}
 
 const INITIAL_FILTERS: CategoryFilters = {
-  global: { value: null, matchMode: "contains" },
-};
+  global: { value: null, matchMode: 'contains' },
+}
 
 export function useCategoryTable() {
-  const categoryStore = useCategoryStore();
-  const alertStore = useAlertStore();
-  const { categories, isLoading } = storeToRefs(categoryStore);
+  const categoryStore = useCategoryStore()
+  const alertStore = useAlertStore()
+  const { categories, isLoading } = storeToRefs(categoryStore)
 
-  const state = ref<TableState>(DEFAULT_TABLE_STATE);
-  const filters = ref<CategoryFilters>(INITIAL_FILTERS);
-  const dtRef = ref();
+  const state = ref<TableState>(DEFAULT_TABLE_STATE)
+  const filters = ref<CategoryFilters>(INITIAL_FILTERS)
+  const dtRef = ref()
 
-  const selectedCount = computed(() => state.value.selectedCategories.length);
+  const selectedCount = computed(() => state.value.selectedCategories.length)
 
   async function loadCategories() {
     try {
-      const response = await categoryStore.fetchCategories();
+      const response = await categoryStore.getCategories()
       if (!response.success) {
-        throw new Error(response.error || "Error loading categories");
+        throw new Error(response.error || 'Error loading categories')
       }
     } catch (error) {
-      alertStore.exception(error);
+      alertStore.exception(error)
     } finally {
-      state.value.selectedCategories = [];
+      state.value.selectedCategories = []
     }
   }
 
   function openNewCategory() {
-    state.value.currentCategory = createEmptyCategoryDTO();
-    state.value.isDialogVisible = true;
+    state.value.currentCategory = Categories.getDefault()
+    state.value.isDialogVisible = true
   }
 
   function editCategory(category: CategoryDTO) {
-    state.value.currentCategory = { ...category };
-    state.value.isDialogVisible = true;
+    state.value.currentCategory = { ...category }
+    state.value.isDialogVisible = true
   }
 
   async function saveCategory(savedCategory: CategoryDTO) {
     try {
-      let response;
+      let response
       if (savedCategory.id) {
-        response = await categoryStore.updateCategory(
-          savedCategory.id,
-          savedCategory
-        );
+        response = await categoryStore.updateCategory(savedCategory.id, savedCategory)
       } else {
-        response = await categoryStore.createCategory(savedCategory);
+        response = await categoryStore.createCategory(savedCategory)
       }
 
       if (response.success) {
-        await loadCategories();
+        await loadCategories()
 
         state.value = {
           ...state.value,
           isDialogVisible: false,
           currentCategory: null,
           selectedCategories: [], // Resetear selección
-        };
+        }
 
         alertStore.toastAlert(
-          `Categoría ${savedCategory.id ? "actualizada" : "creada"
-          } exitosamente`,
-          "success"
-        );
+          `Categoría ${savedCategory.id ? 'actualizada' : 'creada'} exitosamente`,
+          'success'
+        )
       } else {
-        throw new Error(response.error || "Error saving category");
+        throw new Error(response.error || 'Error saving category')
       }
     } catch (error) {
-      alertStore.exception(error);
+      alertStore.exception(error)
     }
   }
 
   function exportToCSV() {
-    dtRef.value?.exportCSV();
+    dtRef.value?.exportCSV()
   }
 
   return {
@@ -111,5 +106,5 @@ export function useCategoryTable() {
     editCategory,
     saveCategory,
     exportToCSV,
-  };
+  }
 }

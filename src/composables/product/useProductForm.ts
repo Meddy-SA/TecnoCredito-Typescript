@@ -1,37 +1,34 @@
-// composables/product/useProductForm.ts
-import { ref, onMounted, computed } from "vue";
-import { useCategoryStore } from "../../stores/category";
-import { useEnumeratorStore } from "../../stores/enumerators";
-import type { ProductFormData } from "../../types/product/product.types";
-import {
-  createEmptyProductDTO,
-  type ProductDTO,
-  type ProductImageDTO,
-} from "../../services/product/types";
-import { minValue, required } from "@vuelidate/validators";
-import { useVuelidate } from "@vuelidate/core";
-import type { UploadedFile } from "../../views/products/types";
-import { storeToRefs } from "pinia";
+import { ref, onMounted, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useVuelidate } from '@vuelidate/core'
+import { required, minValue } from '@vuelidate/validators'
+import { Products, type ProductDTO, type ProductImageDTO } from '@/services/product/types'
+import type { ProductFormData, UploadedFile } from '@/types/product/product.types'
+import { useAlertStore } from '@/stores'
+import { useCategoryStore } from '@/stores/category/category.store'
+import { useEnumeratorStore } from '@/stores/enumerators/enumerator.store'
 
-export function useProductForm(onSave: (product: ProductDTO) => void) {
-  const categoryStore = useCategoryStore();
-  const enumeratorStore = useEnumeratorStore();
+export function useProductForm() {
+  // Store dependencies
+  const categoryStore = useCategoryStore()
+  const enumeratorStore = useEnumeratorStore()
+  const alertStore = useAlertStore()
 
-  // Usando storeToRefs para mantener la reactividad
-  const { categories, isLoading: loadingCategories } =
-    storeToRefs(categoryStore);
-  const { status, isLoading: loadingEnums } = storeToRefs(enumeratorStore);
+  // Store refs
+  const { categories } = storeToRefs(categoryStore)
+  const { status } = storeToRefs(enumeratorStore)
 
-  // Estado del formulario
+  // Form state
   const formData = ref<ProductFormData>({
-    product: createEmptyProductDTO(),
+    product: Products.getDefault(),
     categories: [],
     statuses: [],
     uploadedImages: [],
     selectedFiles: [],
-  });
+  })
+  const isSubmitting = ref(false)
 
-  // Reglas de validación
+  // Validation rules
   const rules = {
     product: {
       name: { required },
@@ -40,81 +37,59 @@ export function useProductForm(onSave: (product: ProductDTO) => void) {
       category: { required },
       status: { required },
     },
-  };
-
-  const v$ = useVuelidate(rules, formData);
-  const isLoading = computed(
-    () => loadingCategories.value || loadingEnums.value
-  );
-  // Cargar datos iniciales
-  async function initForm() {
-    try {
-      // Cargar datos iniciales
-      await Promise.all([
-        categoryStore.fetchCategories(),
-        enumeratorStore.fetchStatuses(),
-      ]);
-
-      formData.value = {
-        ...formData.value,
-        categories: categories.value || [],
-        statuses: status.value || [],
-      };
-    } catch (error) {
-      console.error("Error initializing form:", error);
-      // Asegurar que al menos tengamos arrays vacíos
-      formData.value.categories = [];
-      formData.value.statuses = [];
-    }
   }
 
-  // Manejar el envío del formulario
-  async function handleSubmit() {
-    const isValid = await v$.value.$validate();
-    if (isValid) {
-      // Preparar las imagenes cargadas
-      const productToSave = {
-        ...formData.value.product,
-        productImages: prepareImageData(),
-      };
-      onSave(productToSave);
+  const v$ = useVuelidate(rules, formData)
+
+  // Computed
+  const isLoading = computed(
+    () => categoryStore.isLoading || enumeratorStore.isLoading || isSubmitting.value
+  )
+
+  // Methods
+  async function initForm() {
+    try {
+      await Promise.all([categoryStore.getCategories(), enumeratorStore.fetchEnumerator('status')])
+
+      formData.value.categories = categories.value
+      formData.value.statuses = status.value
+    } catch (error) {
+      alertStore.exception(error)
+      formData.value.categories = []
+      formData.value.statuses = []
     }
   }
 
   function handleImagesSelected(files: UploadedFile[]) {
-    formData.value.selectedFiles = files;
+    formData.value.selectedFiles = files
     formData.value.uploadedImages = files.map((file) => ({
       itemImageSrc: file.objectURL,
       thumbnailImageSrc: file.objectURL,
       alt: file.name,
-    }));
+    }))
   }
 
   function prepareImageData(): ProductImageDTO[] {
-    // Combinar imágenes existentes y nuevas
-    const existingImages = formData.value.product.productImages || [];
+    const existingImages = formData.value.product.productImages || []
     const newImages = formData.value.selectedFiles.map((file) => ({
       id: 0,
-      file: file, // El archivo original para enviar
+      file,
       url: file.objectURL,
-    }));
-
-    return [...existingImages, ...newImages];
+    }))
+    return [...existingImages, ...newImages]
   }
 
-  // Reset form
   function resetForm() {
     formData.value = {
-      product: createEmptyProductDTO(),
+      product: Products.getDefault(),
       categories: categories.value,
       statuses: status.value,
       uploadedImages: [],
       selectedFiles: [],
-    };
-    v$.value.$reset();
+    }
+    v$.value.$reset()
   }
 
-  // Update form with existing product
   function updateFormData(product: ProductDTO | null) {
     if (product) {
       formData.value = {
@@ -127,25 +102,24 @@ export function useProductForm(onSave: (product: ProductDTO) => void) {
             alt: `Product image ${img.id}`,
           })) ?? [],
         selectedFiles: [],
-      };
+      }
     } else {
-      resetForm();
+      resetForm()
     }
   }
 
-  // Cargar datos iniciales al montar el componente
   onMounted(async () => {
-    await initForm();
-  });
+    await initForm()
+  })
 
   return {
     formData,
+    isLoading,
+    isSubmitting,
     v$,
-    initForm,
-    handleSubmit,
     handleImagesSelected,
+    prepareImageData,
     resetForm,
     updateFormData,
-    isLoading,
-  };
+  }
 }
